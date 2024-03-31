@@ -1,0 +1,59 @@
+/* #4d784e #6ea171 #e1d798 
+#3c6027 #b09642 #446b2f #143112 #7a5313
+logo color: #388e3c */
+body {
+  background-image: url("/static/account/img/army.jpg");
+  font-family: "Open Sans", sans-serif;
+}
+.container {
+  background-color: #ffffff;
+  max-width: 1500px;
+}
+.card-header {
+  background-color: #34495e;
+}
+
+.card-body {
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+.form-control {
+  border: none;
+  border-bottom: 2px solid #34495e;
+  border-radius: 0;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border-color: #34495e;
+}
+
+/*.btn-primary {
+  background-color: #2c3e50 !important;
+  border: none;
+  border-radius: 0;
+}
+
+.btn-primary:hover {
+  background-color: #2c3e50;
+}
+
+.btn-primary:focus {
+  box-shadow: none;
+  background-color: #2c3e50;
+}
+*/
+.card-header h2 {
+  font-size: 2rem;
+}
+
+@media (max-width: 767.98px) {
+  .card-header h2 {
+    font-size: 1.5rem;
+  }
+}
+.main{
+  background: white; 
+/*  margin-top:30px;*/
+}

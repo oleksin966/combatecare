@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main">
+  <div class="container">
+  <div class="row pt-2">
+    <div class="col-md-8">
+      <h2>Деталі замовлення #{{ order.id }}</h2>
+      <div class="card">
+		<div class="card-header" style="background: #17a2b8;">
+			<div class="d-flex align-items-center ">
+			  <h5 class="card-title text-white my-auto">Інформація про замовлення</h5>
+          <button class="btn btn-sm ml-auto toggle-card text-white" type="button" aria-label="Toggle Card">
+          <i class="fas fa-chevron-up fa-lg"></i>
+        </button>
+			</div>
+		</div>
+		<div class="card">
+		  <div class="card-body">
+		    <div class="row">
+		      <div class="col-md-6">
+		        <p class="card-text"><strong>Місце доставки:</strong> {{ order.delivery_location }}</p>
+		        <p class="card-text"><strong>Дата замовлення:</strong> {{ order.date_order|date:'d-m-Y' }}</p>
+		        <p class="card-text"><strong>Дата та час відправлення:</strong> {{ order.date_departure|date:'d-m-Y' }}, {{ order.time_departure|time:'H:i' }}</p>
+		        <p class="card-text"><strong>Відстань до місця доставки:</strong> <span id="distance"></span></p>
+		        <p class="card-text"><strong>Приблизний час прибуття:</strong> <span id="duration"></span></p>
+		        <hr>
+		      </div>
+		      <div class="col-md-6">
+		        <p class="card-text"><strong>Статус:</strong> {{ order.get_status_display }}</p>
+		        <p class="card-text"><strong>Доставщик:</strong> {% if order.deliveryman %}{{ order.deliveryman.username }}, {{ order.deliveryman.phone }}{% else %}Не призначено{% endif %}</p>
+		        <p class="card-text"><strong>Волонтер:</strong> {% if order.volunteer %}{{ order.volunteer.username }}, {{ order.volunteer.phone }}{% else %}Не призначено{% endif %}</p>
+		        <p class="card-text"><strong>Військовий:</strong> {% if order.military %}{{ order.military.username }}, {{ order.military.phone }}{% else %}Не призначено{% endif %}</p>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+      </div>
+    </div>
+    <div class="col-md-4 ">
+      <h2>Предмети:</h2>
+      <ul class="list-group">
+        {% for item in order.items %}
+        <li class="list-group-item"><a href="{% url 'item_detail' item.slug %}">{{ item.name }} ({{ item.quantity }})</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="col-md-8">
+		<div id="map" style="height:300px; margin-top:10px"></div>
+			<div class="card-footer">
+	        <button type="button" class="btn btn-primary" style="background: #17a2b8;" id="start-move-btn"><i class="fas fa-truck"></i> ВИРУШИТИ В ДОРОГУ</button>
+	        <button type="button" class="btn btn-primary" style="background: #17a2b8;" id="delivered-btn"> <i class="fas fa-check"></i> ДОСТАВЛЕНО</button>
+      </div>
+  </div>
+  </div>
+</div>
+</div>
+<script>
+{% if order.status == "in_transit" %}
+  document.getElementById("start-move-btn").innerHTML = "<i class='fas fa-truck'></i> У дорозі";
+  document.getElementById("start-move-btn").disabled = true;
+{% elif order.status == "delivered" %}
+    document.getElementById('delivered-btn').disabled = true;
+    document.getElementById("start-move-btn").style.display = "none";
+{% endif %}
+
+const toggleBtn = document.querySelector('.toggle-card');
+const cardBody = document.querySelector('.card-body');
+toggleBtn.addEventListener('click', () => {
+  cardBody.classList.toggle('d-none');
+  toggleBtn.querySelector('i').classList.toggle('fa-chevron-down');
+  toggleBtn.querySelector('i').classList.toggle('fa-chevron-up');
+});
+
+document.getElementById("start-move-btn").addEventListener("click", startMove);
+document.getElementById('delivered-btn').addEventListener('click', markAsDelivered);
+let order_id = {{ order.id }}
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function startMove() {
+  fetch(`/delivering/move/${order_id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken') // assuming you're using Django's CSRF protection
+    },
+    body: JSON.stringify({
+      'order_id': order_id, // replace with the ID of the order you want to update
+      'status': 'В дорозі'
+    })
+  })
+  .then(response => {
+    if (response.ok) {
+      document.getElementById("start-move-btn").textContent = "У дорозі";
+      document.getElementById("start-move-btn").disabled = true;
+    } else {
+      console.log('Request failed');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+function markAsDelivered() {
+  fetch(`/delivering/delivered/${order_id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken') 
+    },
+    body: JSON.stringify({
+      'order_id': order_id,
+      'status': 'Доставлено'
+    })
+  })
+  .then(response => {
+    if (response.ok) {
+      const startMoveBtn = document.getElementById('start-move-btn');
+      if (startMoveBtn) {
+        startMoveBtn.remove();
+      }
+
+      const deliveredBtn = document.getElementById('delivered-btn');
+      deliveredBtn.textContent = 'Доставлено';
+      deliveredBtn.disabled = true;
+    } else {
+      console.log('Request failed');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+{% if order.status == "in_transit" %}
+    setInterval(getLocation, 10000);
+{% endif %}
+
+
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(showPosition);
+  } else {
+    alert("Геолокацію не підтримує данний браузер.");
+  }
+}
+
+function showPosition(position) {
+  const driver_latitude = position.coords.latitude;
+  const driver_longitude = position.coords.longitude;
+
+  fetch('/delivering/update/location/{{order.id}}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      driver_latitude: driver_latitude,
+      driver_longitude: driver_longitude,
+      order_id: {{order.id}} // Replace with the ID of the current order being delivered
+    })
+  })
+  
+  .then(response => {
+    if (response.ok) {
+      console.log('Driver location updated successfully');
+    } else {
+      console.log('Request failed');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+
+  // Display the driver's current location on the map
+  const map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 12,
+    center: { lat: driver_latitude, lng: driver_longitude },
+  });
+
+  const marker = new google.maps.Marker({
+    position: { lat: driver_latitude, lng: driver_longitude },
+    map: map,
+  });
+
+  const directionsService = new google.maps.DirectionsService();
+  const directionsRenderer = new google.maps.DirectionsRenderer();
+  directionsRenderer.setMap(map);
+
+  const request = {
+    origin: { lat: driver_latitude, lng: driver_longitude },
+    destination: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+    travelMode: google.maps.TravelMode.DRIVING,
+  };
+
+  directionsService.route(request, function (result, status) {
+    if (status == "OK") {
+      directionsRenderer.setDirections(result);
+      const route = result.routes[0];
+      const distance = route.legs[0].distance.text;
+      const duration = route.legs[0].duration.text;
+      document.getElementById("distance").textContent = distance;
+      document.getElementById("duration").textContent = duration;
+    }
+  });
+}
+
+
+
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sacM4st4B3ye-bMyMOzDeKbPctrfUmk&callback=getLocation"></script>
+{% endblock %}

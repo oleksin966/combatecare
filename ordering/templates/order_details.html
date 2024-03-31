@@ -1,0 +1,131 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<style> 
+p {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+</style>
+<div class="main">
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Деталі замовлення #{{ order.id }} ({{ order.get_status_display }})</h5>
+    <p class="card-text"><strong>Позивний: {{ user.username }}</strong></p>
+    <p class="card-text"><strong>Предмети:</strong></p>
+    <table class="table">
+
+        <thead>
+          <tr>
+            <th scope="col">Назва</th>
+            <th scope="col">Опис</th>
+            <th scope="col">Кількість</th>
+            <th scope="col">Фото</th>
+          </tr>
+        </thead>
+
+        {% for item in items %}
+        <tbody id="cart-items">
+                <tr>
+                    <td><p class="item-name"><strong><a href="{% url 'item_detail' item.slug %}">{{ item.name }}</a></strong></p></td>
+                    <td><p class="item-name">{{ item.description|truncatechars:100 }}</p></td>
+                    <td><p class="item-name">{{ item.quantity }}</p></td>
+                    {% if item.photo %}
+                      <td><img src="{{ item.photo }}" alt="Зображення" width="100" height="100" data-toggle="modal" data-target="#myModal{{ item.id }}"></td>
+                    {% else %}
+                      <td><i class="fas fa-image"></i> Зображення не знайдено</td>
+                    {% endif %}
+                </tr>
+        </tbody>
+        <div class="modal fade" id="myModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-body">
+                <img src="{{ item.photo }}" alt="photo" class="img-fluid">
+              </div>
+            </div>
+          </div>
+        </div> 
+        {% endfor %}
+
+    </table>
+
+<p><strong>Дата замовлення:</strong> {{ order.date_order }}</p>
+{% if order.status == "is_expected" %}
+    <p><strong>Адреса: </strong> {{ order.delivery_location }}</p>
+    <div id="map" style="max-width:100%; height:500px;"></div>
+{% endif %}
+{% if order.status == "confirmed" %}
+    <p><strong>Підтвердженно Волонтером:</strong> {{ order.volunteer }}, {{ order.volunteer.phone }}</p>
+    <p><strong>Доставщик:</strong> {{ order.deliveryman }}, {{ order.deliveryman.phone }}</p>
+    <p><strong>Відправлення:</strong> {{ order.date_departure }}, {{ order.time_departure }}</p>
+    <p><strong>Адреса:</strong> {{ order.delivery_location }}</p>
+    <div id="map" style="max-width:100%; height:500px;"></div>
+{% endif %}
+{% if order.status == "in_transit" %}
+    <p><strong>Підтвердженно Волонтером:</strong> {{ order.volunteer }}, {{ order.volunteer.phone }}</p>
+    <p><strong>Доставщик:</strong> {{ order.deliveryman }}, {{ order.deliveryman.phone }}</p>
+    <p><strong>Відправлення:</strong> {{ order.date_departure }}, {{ order.time_departure }}</p>
+    <p id="distance"></p>
+    <p id="duration"></p>
+    <p><strong>Адреса:</strong> {{ order.delivery_location }}</p>
+    <div id="map" style="max-width:100%; height:500px;"></div>
+{% endif %}
+{% if order.status == "delivered" %}
+    <p><strong>Підтвердженно Волонтером:</strong> {{ order.volunteer }}, {{ order.volunteer.phone }}</p>
+    <p><strong>Доставщик:</strong> {{ order.deliveryman }}, {{ order.deliveryman.phone }}</p>
+    <p id="distance"></p>
+    <p><strong>Дата та час прибуття:</strong> {{ order.date_arrival }}</p>
+    <p><strong>Адреса:</strong> {{ order.delivery_location }}</p>
+    <div id="map" style="max-width:100%; height:500px;"></div>
+{% endif %}
+{% if order.status == "canceled" %}
+    <p><strong>СКАСОВАНО Волонтером:</strong> {{ order.volunteer }}, {{ order.volunteer.phone }}</p>
+{% endif %}
+    
+    </div>
+  </div>
+</div>
+</div>
+<script>
+
+  function googleMap() {
+    let zoom_num = 14;
+    const map = new google.maps.Map(document.getElementById("map"), {
+      zoom: zoom_num,
+      center: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+    });
+
+    const marker = new google.maps.Marker({
+      position: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+      map: map,
+    });
+
+    {% if order.status == "in_transit" %}
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer();
+    directionsRenderer.setMap(map);
+
+    const request = {
+      origin: { lat: {{ order.driver_latitude|stringformat:'f' }}, lng: {{ order.driver_longitude|stringformat:'f' }} },
+      destination: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+      travelMode: google.maps.TravelMode.DRIVING,
+    };
+
+    directionsService.route(request, function (result, status) {
+      if (status == "OK") {
+        directionsRenderer.setDirections(result);
+        const route = result.routes[0];
+        const distance = route.legs[0].distance.text;
+        const duration = route.legs[0].duration.text;
+        document.getElementById("distance").innerHTML = "<strong>Відстань:</strong> " + distance;
+        document.getElementById("duration").innerHTML = "<strong>Доставка прибуде через:</strong> " + duration;
+      }
+    });
+    {% endif %}
+  }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sacM4st4B3ye-bMyMOzDeKbPctrfUmk&callback=googleMap"></script>
+{% endblock %}

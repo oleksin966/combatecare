@@ -1,0 +1,39 @@
+<div class="modal fade" id="cart-modal" tabindex="-1" role="dialog" aria-labelledby="cart-modal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cart-modal-label">Кошик</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{ cart.cartitem_set.all }}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Назва</th>
+                    <th scope="col">Кількість</th>
+                    <th scope="col">Фото</th>
+                  </tr>
+                </thead>
+
+                
+                <tbody id="cart-items">
+                </tbody> 
+                
+              </table>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрити</button>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'ordering' %}"><button type="button" class="btn btn-primary">Замовити</button></a>
+                {% else %}
+                    <a href="{% url 'login' %}?next={% url 'ordering' %}"><button type="button" class="btn btn-primary">Замовити</button></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

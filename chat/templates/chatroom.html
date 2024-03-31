@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+.msg-text {
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+.msg-sent {
+  background-color: #11111111;
+  border-radius: 10px;
+  padding: 10px;
+  margin-right: 50px;
+  margin-bottom: 10px;
+  align-self: flex-end;
+  max-width: 300px;
+}
+
+.msg-received {
+  background-color: white;
+  border: 1px solid gray;
+  border-radius: 10px;
+  padding: 10px;
+  margin-left: auto;
+  margin-bottom: 10px;
+  align-self: flex-end;
+  max-width: 300px;
+}
+
+.msg-time {
+  font-size: 10px;
+  color: gray;
+  align-self: flex-end;
+}
+.d-none{
+    display: none;
+}
+.chat-box {
+  height: 400px; 
+  overflow-y: scroll; 
+  resize: vertical; 
+}
+</style>
+<div class="main">
+  <div class="container-fluid">
+    <h1>Чат</h1>
+    <div class="row">
+      <div class="col-md-4 border-right p-2">
+        <form id="search-form">
+          <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Пошук людей..." id="search-input">
+            <div class="input-group-append">
+              <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i> Пошук</button>
+            </div>
+          </div>
+        </form>
+        <button id="toggle-users-list" class="btn btn-primary mb-2">
+            Список Користувачів:
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <ul class="list-group" id="usersList">
+          {% for u in usernames %}
+           <li class="list-group-item d-flex justify-content-between align-items-center" data-user-id="{{ u.id }}">
+            <span>{{ u.username }}<span style="color:#007bff">
+              ({% if u.volunteer %}Волонтер{% elif u.military %}Військовий{% elif u.deliveryman %}Доставщик{% else %}Адмін{% endif %})
+            <span></span>
+            <span class="badge badge-primary badge-pill"></span>
+          </li> 
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="col-md-8 p-2">
+        <!-- Chat Box -->
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <i class="fas fa-comments"></i>
+            <span id="receiver"></span>
+          </div>
+          <div class="card-body chat-box">
+            <div class="column justify-content-start" id="messages">
+            </div>
+          </div>
+          <div class="card-footer">
+            <form id="form">
+              <div class="input-group">
+                <input type="text" name="message" class="form-control" placeholder="Введіть повідомлення...">
+                <div class="input-group-append">
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <script type="text/javascript">
+        const roomName = '{{ room_name }}'
+        const receiver = document.getElementById("receiver")
+        let messageDiv = document.getElementById('messages');
+        let chatBox = document.querySelector('.chat-box');
+        {% if room_name %}
+            {% if phone %}
+                receiver.innerHTML = `Спілкування з ${roomName}({{ role }}), телефон: {{ phone }}`;
+            {% else %}
+                receiver.innerHTML = `Спілкування з ${roomName}({{ role }})`;
+            {% endif %}
+        {% else %}
+            receiver.innerHTML = `Виберіть Співрозмовника`;
+        {% endif %}
+            
+
+        fetch(`/get_messages/${roomName}/`)
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error('Failed to load messages.');
+            }
+          })
+          .then(messages => {
+            console.log('Messages:', messages);
+
+            messages.forEach(message => {
+              const messageText = message.text;
+              const sender = message.sender;
+
+              messageDiv.insertAdjacentHTML('beforeend', `
+                      <div class="col-sm-12 mb-2 ${sender == '{{ request.user.id }}' ? 'msg-sent' : 'msg-received'}">
+                        <div class="msg-text">${messageText}</div>
+                        <div class="msg-time">${new Date().toLocaleString()}</div>
+                      </div>
+                    `);
+
+                });
+            chatBox.scrollTop = messageDiv.scrollHeight; 
+          })
+          .catch(error => {
+            console.error(error);
+          });
+
+
+        let url = `ws://${window.location.host}/ws/socket-server/${roomName}/`
+        const chatSocket = new WebSocket(url)
+
+
+        chatSocket.onmessage = function(e){
+            let data = JSON.parse(e.data)
+            console.log('Data:', data)
+
+            if (data.type === 'chat_message') {
+                if (data.message != ""){
+                    messageDiv.insertAdjacentHTML('beforeend', `
+                      <div class="col-sm-12 mb-2 ${data.author == '{{ request.user.id }}' ? 'msg-sent' : 'msg-received'}">
+                        <div class="msg-text">${data.message}</div>
+                        <div class="msg-time">${new Date().toLocaleString()}</div>
+                      </div>
+                    `);
+                }
+            }
+            chatBox.scrollTop = messageDiv.scrollHeight;
+        }
+
+        let form = document.getElementById('form')
+        form.addEventListener('submit', (e)=> {
+            e.preventDefault()
+            let message = e.target.message.value
+            let now = new Date().toISOString() 
+            chatSocket.send(JSON.stringify({
+                'message':message,
+                'author': "{{ request.user.id }}",
+                'datetime': now,
+                'type':'chat'
+            }))
+            form.reset()
+        })
+
+
+        // Get the users list
+        const usersList = document.querySelector('#usersList');
+        usersList.addEventListener('click', event => {
+            const listItem = event.target.closest('li');
+
+            const username = listItem.textContent.trim().split(/(\s+)/)[0];
+
+            // Get the user ID from the data attribute
+            const userId = listItem.dataset.userId;
+
+            chatSocket.url = `ws://${window.location.host}/ws/socket-server/${roomName}/`;
+
+            // Send a WebSocket message to create a new chat
+            const socket = new WebSocket(`ws://${window.location.host}/ws/socket-server/${roomName}/`);
+            socket.onopen = (e) => {
+                socket.send(JSON.stringify({
+                    'type': 'load_chat',
+                    'recipient_id': userId
+                }));
+            };
+            window.location.href = `http://${window.location.host}/chat/${username}/`;
+        });
+
+
+
+        const searchForm = document.getElementById("search-form");
+        const searchInput = document.getElementById("search-input");
+
+        searchForm.addEventListener("submit", function(e) {
+          usersList.innerHTML = ""
+          e.preventDefault();
+          const inputVal = searchInput.value.trim();
+          let url = '/search_users/';
+          if (inputVal.length > 0) {
+            url = `/search_users/?query=${inputVal}`;
+          }
+          fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              const users = data.users;
+              let output = '';
+              users.forEach(user => {
+                output += `
+                  <li class="list-group-item d-flex justify-content-between align-items-center" data-user-id="${user.id}">
+                    <span>${user.username}</span>
+                    <span class="badge badge-primary badge-pill">0</span>
+                  </li>
+                `;
+                //<span style="color:#007bff">(${user.role})</span>
+              });
+              usersList.innerHTML = output;
+            })
+            .catch(error => console.error(error));
+        });
+
+
+      const toggleBtn = document.querySelector('#toggle-users-list');
+      let isListVisible = true;
+
+      toggleBtn.addEventListener('click', () => {
+        if (isListVisible) {
+          usersList.classList.add('d-none');
+          toggleBtn.querySelector('i').classList.remove('fa-chevron-down');
+          toggleBtn.querySelector('i').classList.add('fa-chevron-right');
+        } else {
+          usersList.classList.remove('d-none');
+          toggleBtn.querySelector('i').classList.remove('fa-chevron-right');
+          toggleBtn.querySelector('i').classList.add('fa-chevron-down');
+        }
+        isListVisible = !isListVisible;
+      });
+
+
+
+
+                      // messageDiv.innerHTML = ""
+                // let messages = JSON.parse(data.messages);
+                // messages.forEach(function(message){
+                //     let messageText = message.fields.text;
+                //     let senderId = message.fields.sender;
+                //     let sender = message.sender_username; 
+                //     let recipientId = message.fields.recipient;
+                //     let recipient = message.recipient_username;
+                //     let timestamp = message.fields.timestamp;
+
+                //     //add the message to the message div
+                //     messageDiv.insertAdjacentHTML('beforeend', `
+                //         <div class="col-sm-12 mb-2">
+                //             <div class="msg-left">${messageText}</div>
+                //         </div>
+                //     `);
+                // });
+    </script>
+{% endblock %}
+
+
+<!-- jQuery -->

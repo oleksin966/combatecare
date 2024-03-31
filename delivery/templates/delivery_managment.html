@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+ <h2>Мої Завдання</h2>
+  <div class="list-group">
+  {% for order in orders %}
+  <div class="list-group-item list-group-item-action">
+    <div class="row">
+      <div class="col-md-8">
+        <h5 class="mb-1">Замовлення #{{ order.id }}</h5>
+        <small>Дата замовлення: {{ order.date_order }}</small>
+        <br>
+        <small>Місце доставки: {{ order.delivery_location }}</small>
+        <br>
+        <small>Дата та час відправлення: {{ order.date_departure|date:'d-m-Y' }}, {{ order.time_departure|time:'H:i' }}</small>
+      </div>
+      <div class="col-md-4 text-center">
+        <h6>Предмети:</h6>
+        {% for item in order.items %}
+        {{ item.name }}({{item.quantity}}),
+        {% endfor %}
+      </div>
+      <div class="col-md-1">
+        <a href="{% url 'task_detail' order.id %}" class="btn btn-info">Деталі</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+.card {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.card-img {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+}
+@media (max-width: 800px) {
+  .card-img {
+    height: auto;
+  }
+}
+</style>
+<div class="container my-3 p-3 mx-auto">
+<h1  style="font-family: 'Allerta Stencil', sans-serif;">Військові предмети</h1>
+
+<form method="get" class="form-inline">
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3 mr-3">
+            <div class="form-group">
+                <label for="search">Пошук:</label>
+                <input type="text" name="search" id="search" class="form-control" placeholder="Пошук...">
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3 mr-3">
+            <div class="form-group">
+                <label for="category">Категорії:</label>
+                <select name="category" id="category" class="form-control">
+                    <option value="">Всі Категорії</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4 col-lg-3 mb-3 mr-3">
+            <div class="form-group">
+                <label for="subcategory">Підкатегорії:</label>
+                <select name="subcategory" id="subcategory" class="form-control">
+                    <option value="">Всі Підкатегорії</option>
+                    {% for subcategory in subcategories %}
+                        <option value="{{ subcategory.id }}" {% if selected_subcategory == subcategory.id %}selected{% endif %}>{{ subcategory.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <button type="submit" class="btn btn-primary mt-3 mt-sm-0"><i class="fa fa-search"></i> Пошук</button>
+        </div>
+    </div>
+</form>
+
+<hr>
+
+<div class="row">
+  {% for item in items %}
+  <div class="col-12 col-sm-12 col-md-6 col-lg-3">
+    <div class="card">
+      {% if item.photo %}
+      <img class="card-img" src="{{ item.photo.url }}" alt="Vans">
+      {% else %}
+      <img class="card-img" src="/static/warehouse/img/nophotoitem.jpg" alt="Vans">
+      {% endif %}
+      <div class="card-body">
+        <h4 class="card-title">{{ item.name }}</h4>
+        <h6 class="card-subtitle mb-2 text-muted">Код предмета: item{{ item.id }}</h6>
+        <p class="card-text">
+          {{ item.description|truncatechars:80 }}
+        </p>
+        <div class="price text-success">
+            <h5 class="mt-4">{{ item.quantity }} одиниць на складі</h5>
+        </div>
+        <div class="buy d-flex justify-content-between align-items-center">
+          <div>
+            <a href="{% url 'item_detail' item.slug %}" class="btn btn-outline-primary mt-3 me-2"><i class="fas fa-info-circle"></i> Деталі</a>
+            <button  data-item-id="{{ item.id }}" class="btn add-to-cart-btn btn-danger mt-3"><i class="fas fa-shopping-cart"></i> Добавити в корзину</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</div>
+
+
+
+{% endblock %}

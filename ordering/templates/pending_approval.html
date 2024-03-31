@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style> 
+p, label {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+</style>
+{% if order.status == "is_expected" %}
+<div class="main">
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Деталі замовлення #{{ order.id }}</h5>
+    <p class="card-text"><strong>Військовий: {{ order.military }}</strong></p>
+    <p class="card-text"><strong>Предмети:</strong></p>
+    <table class="table">
+
+        <thead>
+          <tr>
+            <th scope="col">Назва</th>
+            <th scope="col">Опис</th>
+            <th scope="col">Кількість</th>
+            <th scope="col">Фото</th>
+          </tr>
+        </thead>
+
+		{% for item_id,item in order.items.items %}
+				<tbody id="cart-items">
+          <tr>
+              <td><p class="item-name"><strong><a href="{% url 'item_detail' item.slug %}">{{ item.name }}</a></strong></p></td>
+              <td><p class="item-name">{{ item.description|truncatechars:100 }}</p></td>
+              <td><p class="item-name">{{ item.quantity }}</p></td>
+              {% if item.photo %}
+                <td><img src="{{ item.photo }}" alt="Зображення" width="100" height="100" data-toggle="modal" data-target="#myModal{{ item.id }}"></td>
+              {% else %}
+                <td><i class="fas fa-image"></i> Зображення не знайдено</td>
+              {% endif %}
+          </tr>
+        </tbody>
+        <div class="modal fade" id="myModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-body">
+                <img src="{{ item.photo }}" alt="photo" class="img-fluid">
+              </div>
+            </div>
+          </div>
+        </div>  
+		{% endfor %}
+
+	</table>
+    <p><strong>Дата замовлення:</strong> {{ order.date_order }}</p>
+    <p><strong>Адреса Доставки:</strong> {{ order.delivery_location }} ({{ order.delivery_latitude }}, {{ order.delivery_longitude }})</p>
+    <p><div id="map" style="max-width: 800px; height: 300px;"></div></p>
+
+		<strong><label for="deliveryman">Вибрати Доставщика:</label></strong>
+	  <select name="deliveryman" id="deliveryman">
+	    {% for deliveryman in deliverymans %}
+	      <option value="{{ deliveryman.id }}">{{ deliveryman.user.username }}</option>
+	    {% endfor %}
+	  </select>
+	  <p><strong><label for="departure_date">Дата відправлення:</label></strong>
+    <input type="date" id="departure_date" name="departure_date" required></p>
+    <p><strong><label for="departure_time">Час відправлення:</label></strong>
+		<input type="time" id="departure_time" name="departure_time" required></p>
+    <p><button id="btn-danger-send-" class="btn text-white btn-warning send-order-btn">Підтвердити Замовлення</button>
+    <button id="btn-cancel-send-" class="btn btn-outline-warning">Скасувати Замовлення</button></p>
+  </div>
+</div>
+</div>
+{% endif %}
+<script>
+  function initMap() {
+  	const zoomNum = 12;
+    const map = new google.maps.Map(document.getElementById("map"), {
+      zoom: zoomNum,
+      center: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+    });
+    const marker = new google.maps.Marker({
+      position: { lat: {{ order.delivery_latitude|stringformat:'f' }}, lng: {{ order.delivery_longitude|stringformat:'f' }} },
+      map: map,
+    });
+
+  }
+  	{% if order.status == "is_expected" %}
+    const sendApproved = document.querySelector('#btn-danger-send-');
+    const cancelApprove = document.querySelector('#btn-cancel-send-');
+
+    {% if order.status == "confirmed" %}
+		  sendApproved.disabled = true;
+			sendApproved.innerHTML = "Замовлення підтверджено"
+		{% endif %}
+    sendApproved.addEventListener('click', () => {
+		  const deliverymanSelect = document.querySelector('#deliveryman');
+		  const deliverymanName = deliverymanSelect.options[deliverymanSelect.selectedIndex].text;
+		  const departureDate = document.querySelector('#departure_date').value;
+		  const departureTime = document.querySelector('#departure_time').value;
+		  const orderId = "{{ order.id }}";
+		  const csrf_token = '{{ csrf_token }}';
+
+		  fetch(`/ordering/approved/${orderId}`, {
+		    method: 'POST',
+		    headers: {
+		      'Content-Type': 'application/json',
+		      'X-CSRFToken': csrf_token
+		    },
+		    body: JSON.stringify({
+		      deliveryman: deliverymanName,
+		      departure_date: departureDate,
+		      departure_time: departureTime
+		    })
+		  })
+		  .then(response => response.json())
+		  .then(data => {
+	      console.log(data);
+	      alert(`Замовлення #${orderId} підтверджено!`)
+	      const card = sendApproved.closest('.card');
+		    card.style.opacity = 0;
+		    setTimeout(function() {
+	      card.parentNode.removeChild(card);
+	    }, 500);
+		})
+		  .catch(error => console.error(error));
+		});
+
+		cancelApprove.addEventListener('click', () => {
+		  const deliverymanSelect = document.querySelector('#deliveryman');
+		  const deliverymanName = deliverymanSelect.options[deliverymanSelect.selectedIndex].text;
+		  const departureDate = document.querySelector('#departure_date').value;
+		  const departureTime = document.querySelector('#departure_time').value;
+		  const orderId = "";
+		  const csrf_token = '{{ csrf_token }}';
+
+		  fetch(`/ordering/cancel/${orderId}`, {
+		    method: 'POST',
+		    headers: {
+		      'Content-Type': 'application/json',
+		      'X-CSRFToken': csrf_token
+		    },
+		    body: JSON.stringify({
+		    	order_id: orderId,
+		      deliveryman: deliverymanName,
+		      departure_date: departureDate,
+		      departure_time: departureTime
+		    })
+		  })
+		  .then(response => response.json())
+		  .then(data => {
+	      console.log(data);
+	      alert(`Замовлення #${orderId} Скасовано!`)
+		  	const card = cancelApprove.closest('.card');
+		    card.style.opacity = 0;
+		    setTimeout(function() {
+	      card.parentNode.removeChild(card);
+	    }, 500)
+		    })
+		  .catch(error => console.error(error));
+		});
+		{% endif %}
+	// |stringformat:'f'
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sacM4st4B3ye-bMyMOzDeKbPctrfUmk&callback=initMap"></script>
+{% endblock %}
