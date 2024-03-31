@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+  <div class="row justify-content-center pt-5">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-dark text-light text-center">
+          <h2 class="mb-0">Вхід в аккаунт:</h2>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary btn-block mt-3">Ввійти</button>
+            {{ error }}
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+{% block domready %}
+  $('.container').removeClass('container').css('background-color', 'none');
+{% endblock %}

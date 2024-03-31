@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+.show{
+  width: 100%;
+  height: max-content;
+}
+  tr:hover{
+    background-color: #11111111;
+  }
+}
+
+</style>
+<div class="container-fluid">
+    <div class="row">
+            {% include 'sidebar.html' %}
+            {% include 'content.html' %}
+        </div>
+    </div>
+</div>
+<script>
+function getOrders(status) {
+    fetch('/ordering/status/' + status + "/")
+    .then(response => response.json())
+    .then(data => {
+        const orders = data.orders;
+        let table = '<table class="table">';
+        {% if user.volunteer %}
+        table += '<thead><tr><th>ID</th><th>Військовий</th><th>Предмети</th><th>Дата замовлення</th><th></th></tr></thead>';
+        {% elif user.military %}
+        table += '<thead><tr><th>ID</th><th>Предмети</th><th>Дата замовлення</th><th></th></tr></thead>';
+        {% elif user.deliveryman %}
+        table += '<thead><tr><th>ID</th><th>Військовий</th><th>Предмети</th><th>Адреса</th><th></th></tr></thead>';
+        {% endif %}
+        table += '<tbody>';
+        orders.forEach(function(order) {
+            table += '<tr>';
+            table += '<td>' + order.id + '</td>';
+            {% if user.volunteer or user.deliveryman %}
+            table += '<td>' + order.military + '</td>';
+            {% endif %}
+            table += '<td>';
+            order.items.forEach(function(item) {
+                table += item.name + '<span style="color:{% if user.military %}#dc3545;{% elif user.volunteer %}#ffc107;{% elif user.deliveryman %}#0d6efd;{% endif %}"> (' + item.quantity + ')</span>' + '<br>';
+            });
+            table += '</td>';
+            {% if user.deliveryman %}
+            table += '<td>' + order.delivery_location + '</td>';
+            {% else %}
+            table += '<td>' + order.date_order + '</td>';
+            {% endif %}
+            {% if user.military %}
+                if (order.status === 'not_confirmed') {
+                    table += '<td><a href="/ordering/user_orders/' + order.id + '" class="btn btn-danger">Деталі</a></td>';
+                } else {
+                    table += '<td><a href="/ordering/order_detail/' + order.id + '" class="btn btn-danger">Деталі</a></td>';
+                }
+            {% elif user.volunteer %}
+
+                table += '<td><a href="/ordering/pending_approval/' + order.id + '" class="btn btn-warning">Деталі</a></td>';
+            {% elif user.deliveryman %}
+                if (order.status === 'delivered') {
+                    table += '<td><a href="/delivering/order/' + order.id + '" class="btn btn-primary">Деталі</a></td>';
+                } else {
+                    table += '<td><a href="/delivering/order/' + order.id + '" class="btn btn-primary">Деталі</a></td>';
+                }
+                
+            {% endif %}
+            table += '</tr>';
+        });
+        table += '</tbody>';
+        table += '</table>';
+        document.getElementById('order-status').innerHTML = table;
+    })
+    .catch(error => {
+        console.error(error);
+    });
+}
+
+const sidebarMenu = document.querySelector('#sidebarMenu');
+
+window.addEventListener('load', () => {
+  checkWindowSize();
+});
+
+window.addEventListener('resize', () => {
+  checkWindowSize();
+});
+
+function checkWindowSize() {
+  if (window.innerWidth <= 768) {
+    sidebarMenu.classList.add('show');
+  } else {
+    sidebarMenu.classList.remove('show');
+  }
+}
+
+
+</script>
+{% endblock %}

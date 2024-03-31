@@ -1,0 +1,17 @@
+<div class="col-md-9 p-1">
+    <div class="content bg-white h-100 w-100 p-2">
+    <h3>Ласкаво просимо
+                {% if user.volunteer %}
+                Волонтера <span style="color: #ffc107;">{{ user.username }}</span>
+                {% elif user.military %}
+                Військового <span style="color: #dc3545;">{{ user.username }}</span>
+                {% elif user.deliveryman %}
+                Доставщика <span style="color: #0d6efd;">{{ user.username }}</span>
+                {% endif %} в CombatCare
+    </h3>
+    <hr>
+    <div id="order-status">
+
+    </div>
+    </div>
+</div>

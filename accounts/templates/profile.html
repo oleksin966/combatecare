@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main">
+  <div class="container-fluid">
+    <h1 class="text-center mb-4">Профіль</h1>
+    <div class="row">
+      <div class="col-md-6 text-center">
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="Profile Photo" class="img-fluid mb-3" style="max-width: 300px;">
+        {% else %}
+          <img src="/static/account/img/noavatar.png" alt="Profile Photo" class="img-fluid mb-3" style="max-width: 300px;">
+        {% endif %}
+        <p><strong>Діяльність:</strong>
+          {% if user.volunteer %}
+            Волонтер
+          {% elif user.military %}
+            Військовий
+          {% elif user.deliveryman %}
+            Доставщик
+          {% endif %}
+        </p>
+        <p><strong>Email:</strong> {{ user.email|default:'-'}}</p>
+        <p><strong>Номер телефону:</strong> {{ user.phone|default:'-'}}</p>
+      </div>
+      <div class="col-md-6">
+        <form method="post" class="mt-4" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="form-group row">
+            <label for="{{ form.username.id_for_label }}" class="col-sm-3 col-form-label">Позивний:</label>
+            <div class="col-sm-9">
+              {{ form.username }}
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="{{ form.first_name.id_for_label }}" class="col-sm-3 col-form-label">Ім'я:</label>
+            <div class="col-sm-9">
+              {{ form.first_name }}
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="{{ form.last_name.id_for_label }}" class="col-sm-3 col-form-label">Прізвище:</label>
+            <div class="col-sm-9">
+              {{ form.last_name }}
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="{{ form.info.id_for_label }}" class="col-sm-3 col-form-label">Інформація:</label>
+            <div class="col-sm-9">
+              {{ form.info }}
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="{{ form.avatar.id_for_label }}" class="col-sm-3 col-form-label">Фото профілю:</label>
+            <div class="col-sm-9">
+              {{ form.avatar }}
+            </div>
+          </div>
+          {% if user.military %}
+          <div class="form-group row">
+            <label for="{{ form.avatar.id_for_label }}" class="col-sm-3 col-form-label">Військовий підрозділ:</label>
+            <div class="col-sm-9">
+              {{ form.military_military_unit }}
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="{{ form.avatar.id_for_label }}" class="col-sm-3 col-form-label">Військове звання:</label>
+            <div class="col-sm-9">
+              {{ form.military_military_rank }}
+            </div>
+          </div>
+          {% endif %}
+          {% if user.deliveryman %}
+          <div class="form-group row">
+            <label for="{{ form.avatar.id_for_label }}" class="col-sm-3 col-form-label">Статус:</label>
+            <div class="col-sm-9">
+              {{ form.deliveryman_status }}
+            </div>
+          </div>
+          {% endif %}
+          <div class="form-group row">
+            <div class="col-sm-3"></div>
+            <div class="col-sm-9">
+              <button type="submit" class="btn btn-warning">Зберегти зміни</button>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}

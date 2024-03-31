@@ -1,0 +1,99 @@
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CombatCare</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" />
+    <link rel="stylesheet" type="text/css" href="{% static 'account/css/style.css' %}">
+    <!--FONTS-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&display=swap" rel="stylesheet">
+<style>
+/* Sidebar styles */
+.sidebar {
+  position: relative;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding: 0px 0 0; /* Height of navbar */
+  box-shadow: 0 2px 5px 0 rgb(0 0 0 / 5%), 0 2px 10px 0 rgb(0 0 0 / 5%);
+  width: 240px;
+  z-index: 0;
+  transition: transform 0.3s ease-in-out; /* Add transition */
+}
+
+.sidebar .active {
+  border-radius: 5px;
+  box-shadow: 0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%);
+}
+nav{
+    z-index: 1;
+}
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'home' %}">
+        <img src="{% static 'logo/logo3.png' %}" width="250" height="45" alt="CombatCare Logo">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            {% if user.is_authenticated %}
+            <li class="nav-item active">
+                <a class="nav-link" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i> Дії<span class="sr-only">(current)</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'profile' %}"><i class="fa fa-user"></i> Профіль</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'init_chat' %}"><i class="fas fa-comment"></i> Повідомлення</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Вихід</a>
+            </li>
+            {% else %}
+            <li>
+                 <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Вхід</a>
+            </li>
+            <li>
+                 <a class="nav-link" href="{% url 'registration' %}"><i class="fas fa-user-plus"></i> Реєстрація</a>
+            </li>
+            {% endif %}
+            {% if not user.is_authenticated or user.military %}
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="cart-link">Корзина <i class="fas fa-shopping-basket"></i><span id="cart-counter" class="badge badge-pill bg-danger text-white">1</span></a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+
+
+  <!-- Sidebar -->
+<!-- <div class="container my-3 p-3 mx-auto"> -->
+    {% include 'cartitems.html' %}
+	{% block content %}
+    {% endblock %}
+<!-- </div> -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function() {
+        {% block domready %}{% endblock %}
+    });
+</script>
+<script src="{% static 'account/js/scripts.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<div class="d-lg-block sidebar col-md-3 p-1" id="sidebarMenu">
+  <nav class="bg-white">
+    <div class="position-sticky">
+      <div class="list-group list-group-flush mx-3">
+            {% if user.volunteer %}
+                <strong class="py-2">Вибрати дію:</strong>
+                <a href="http://{{ request.get_host }}/admin" class="list-group-item list-group-item-action py-2 ripple"> <i class="fas fa-warehouse mr-2"></i> Управління складом </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('is_expected')"> <i class="fas fa-inbox mr-2"></i> Вхідні Замовлення ({{ incoming_orders }}) </a>
+            {% endif %}
+            {% if user.military %}
+            <strong class="py-2">Статус Замовлень:</strong>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('not_confirmed')"> <i class="fas fa-inbox mr-2"></i> Вхідні {% if count.not_confirmed > 0 %} ({{ count.not_confirmed }}) {% endif %} </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('is_expected')">
+                <i class="fas fa-hourglass-start mr-2"></i> Очікують підтвердження {% if count.is_expected > 0 %} ({{ count.is_expected }}) {% endif %}
+            </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('confirmed')"> <i class="fas fa-check-circle mr-2"></i> Підтвердженні {% if count.confirmed > 0 %} ({{ count.confirmed }}) {% endif %} </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('in_transit')"> <i class="fas fa-truck mr-2"></i> В Дорозі {% if count.in_transit > 0 %} ({{ count.in_transit }}) {% endif %} </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('delivered')"> <i class="fas fa-check-double mr-2"></i> Доставлено {% if count.delivered > 0 %} ({{ count.delivered }}) {% endif %} </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('canceled')"> <i class="fas fa-times-circle mr-2"></i> Скасовані {% if count.canceled > 0 %} ({{ count.canceled }}) {% endif %} </a>
+            {% endif %}
+
+            {% if user.deliveryman %}
+                <strong class="py-2">Вибрати дію:</strong>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('confirmed')">
+                    <i class="fas fa-tasks mr-2"></i> Нові Завдання ({{ count.tasks }})
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('in_transit')">
+                    <i class="fas fa-truck mr-2"></i> В дорозі ({{ count.in_transit_delivery }})
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('delivered')">
+                    <i class="fas fa-check-circle mr-2"></i> Виконані Завдання
+                    {% if count.delivered > 0 %}
+                        ({{ count.delivered }})
+                    {% endif %}
+                </a>
+            {% endif %}
+            {% if user.is_superuser %}
+            <a href="/admin/" class="list-group-item list-group-item-action py-2 ripple" onclick="getOrders('confirmed')">
+                    <i class="fas fa-warehouse mr-2"></i> Адмін Панель
+                </a>
+            {% endif %}
+
+      </div>
+    </div>
+  </nav>
+</div>
